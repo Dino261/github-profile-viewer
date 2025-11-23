@@ -1,145 +1,108 @@
-/**
- * GitHub Profile Viewer - Main Application Script
- * 
- * This script handles all client-side functionality including:
- * - GitHub API integration for user profile searches
- * - Contact form handling with local storage
- * - Smooth animations using Anime.js library
- * - User input validation and error handling
- * 
- * @file script.js
- * @version 1.0
- * @author Tugrulhan YIGIT
- */
+// script.js - Main JavaScript file for GitHub Profile Viewer
+// This handles searching GitHub profiles and displaying results
+// Uses classes for organization and Anime.js for animations
 
-// Wait for the DOM to fully load before executing scripts
+// ProfileManager class - handles all GitHub profile operations
+class ProfileManager {
+    constructor() {
+        // Array to keep track of recent searches
+        this.searchHistory = [];
+    }
+    
+    // Fetches user data from GitHub API
+    async searchUser(username) {
+        try {
+            // Get user data from GitHub API using config settings
+            const response = await fetch(`${CONFIG.API_BASE_URL}/users/${username}`);
+            if (!response.ok) throw new Error('User not found');
+            return await response.json();
+        } catch (error) {
+            throw new Error('Failed to fetch user data: ' + error.message);
+        }
+    }
+    
+    // Displays user profile information on the page
+    showProfile(userData) {
+        // Update all the profile elements with user data
+        document.getElementById('userLogin').textContent = '@' + userData.login;
+        document.getElementById('userName').textContent = userData.name || 'No name';
+        document.getElementById('userBio').textContent = userData.bio || 'No bio';
+        document.getElementById('avatarImg').src = userData.avatar_url;
+        document.getElementById('repoCount').textContent = userData.public_repos;
+        document.getElementById('followerCount').textContent = userData.followers;
+        document.getElementById('followingCount').textContent = userData.following;
+        document.getElementById('githubLink').href = userData.html_url;
+    }
+    
+    // Saves search to browser's local storage
+    saveToHistory(username) {
+        let history = JSON.parse(localStorage.getItem('githubSearchHistory')) || [];
+        history = history.filter(item => item !== username);
+        history.unshift(username);
+        localStorage.setItem('githubSearchHistory', JSON.stringify(history.slice(0, 5)));
+    }
+}
+
+// FormHandler class - manages contact form operations
+class FormHandler {
+    constructor() {
+        // Key for storing form data in local storage
+        this.storageKey = 'contactSubmissions';
+    }
+    
+    // Saves form data to local storage
+    saveForm(formData) {
+        let submissions = JSON.parse(localStorage.getItem(this.storageKey)) || [];
+        submissions.push(formData);
+        localStorage.setItem(this.storageKey, JSON.stringify(submissions));
+        return formData;
+    }
+}
+
+// Start the application when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    /**
-     * DOM Elements - Cache frequently accessed elements
-     * @type {HTMLElement}
-     */
+    // Create instances of our classes
+    const profileManager = new ProfileManager();
+    const formHandler = new FormHandler();
+    
+    // Get references to important HTML elements
     const searchBtn = document.getElementById('searchBtn');
     const usernameInput = document.getElementById('usernameInput');
     const profileSection = document.getElementById('profileSection');
+    const contactForm = document.getElementById('contactForm') || document.querySelector('.contact-form');
 
-    // Check if search elements exist
+    // Set up search functionality
     if (searchBtn && usernameInput) {
-        /**
-         * Event Listener - Search button click handler
-         */
-        searchBtn.addEventListener('click', searchUser);
-
-        /**
-         * Event Listener - Enter key support in search input
-         * @param {KeyboardEvent} e - Keyboard event object
-         */
+        // Search when button is clicked
+        searchBtn.addEventListener('click', handleSearch);
+        
+        // Search when Enter key is pressed
         usernameInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') searchUser();
+            if (e.key === 'Enter') handleSearch();
         });
     }
 
-    /**
-     * Contact Form Handler - Manages form submissions on contact.html
-     * @type {HTMLElement}
-     */
-    const contactForm = document.getElementById('contactForm') || 
-                       document.querySelector('.contact-form');
-
-    if (contactForm) {
-        /**
-         * Event Listener - Contact form submission handler
-         * @param {Event} e - Form submission event
-         */
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            /**
-             * Form Data Object - Collects and structures user input
-             * @type {Object}
-             * @property {string} name - User's full name
-             * @property {string} email - User's email address
-             * @property {string} subject - Message subject
-             * @property {string} message - User's message content
-             * @property {string} timestamp - ISO string of submission time
-             */
-            const formData = {
-                name: document.getElementById('name').value,
-                email: document.getElementById('email').value,
-                subject: document.getElementById('subject').value,
-                message: document.getElementById('message').value,
-                timestamp: new Date().toISOString()
-            };
-            
-            /**
-             * Local Storage Management - Saves form submissions
-             * @type {Array}
-             */
-            let submissions = JSON.parse(localStorage.getItem('contactSubmissions')) || [];
-            submissions.push(formData);
-            localStorage.setItem('contactSubmissions', JSON.stringify(submissions));
-            
-            // User feedback
-            alert('Thank you for your message! We have received your feedback and saved it successfully.');
-            
-            // Reset form fields
-            this.reset();
-            
-            // Development logging for assessment verification
-            console.log('Form data saved:', formData);
-            console.log('All submissions:', submissions);
-        });
-    }
-
-    /**
-     * Main Search Function - Fetches and displays GitHub user profiles
-     * @async
-     * @function searchUser
-     * @returns {Promise<void>}
-     */
-    async function searchUser() {
-        /**
-         * Username Input - Trimmed user input value
-         * @type {string}
-         */
+    // Handle GitHub user search
+    async function handleSearch() {
         const username = usernameInput.value.trim();
         
-        // Input validation - check for empty username
+        // Check if user entered something
         if (username === '') {
             alert('Please enter username');
             return;
         }
         
-        // Loading state - Update UI to show processing
+        // Show loading state
         searchBtn.textContent = 'Searching...';
         searchBtn.disabled = true;
         
         try {
-            /**
-             * API Request - Fetch user data from GitHub API
-             * @type {Response}
-             */
-            const response = await fetch('https://api.github.com/users/' + username);
+            // Get and display user data
+            const userData = await profileManager.searchUser(username);
+            profileManager.showProfile(userData);
+            profileManager.saveToHistory(username);
             
-            // Error handling for API response
-            if (!response.ok) throw new Error('User not found');
-            
-            /**
-             * User Data - Parsed JSON response from GitHub API
-             * @type {Object}
-             */
-            const userData = await response.json();
-            
-            // Update DOM with user profile data
-            document.getElementById('userLogin').textContent = '@' + userData.login;
-            document.getElementById('userName').textContent = userData.name || 'No name';
-            document.getElementById('userBio').textContent = userData.bio || 'No bio';
-            document.getElementById('avatarImg').src = userData.avatar_url;
-            document.getElementById('repoCount').textContent = userData.public_repos;
-            document.getElementById('followerCount').textContent = userData.followers;
-            document.getElementById('followingCount').textContent = userData.following;
-            document.getElementById('githubLink').href = userData.html_url;
-            
-            // Show profile section with Anime.js animation
+            // Show profile with smooth animation
             profileSection.style.display = 'block';
             anime({
                 targets: '#profileSection',
@@ -149,22 +112,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 easing: 'easeOutQuad'
             });
             
-            /**
-             * Search History Management - Saves recent searches
-             * @type {Array}
-             */
-            let history = JSON.parse(localStorage.getItem('githubSearchHistory')) || [];
-            history = history.filter(item => item !== username); // Remove duplicates
-            history.unshift(username); // Add to beginning (most recent first)
-            localStorage.setItem('githubSearchHistory', JSON.stringify(history.slice(0, 5)));
-            
         } catch (error) {
-            // Error handling for network issues or invalid users
+            // Show error message if something goes wrong
             alert('Error: ' + error.message);
         }
         
-        // Reset button state after operation completion
+        // Reset button to normal state
         searchBtn.textContent = 'Search';
         searchBtn.disabled = false;
+    }
+
+    // Handle contact form submission
+    if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form data from user input
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                subject: document.getElementById('subject').value,
+                message: document.getElementById('message').value,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Save form data and show success message
+            formHandler.saveForm(formData);
+            alert('Thank you for your message! We have received your feedback and saved it successfully.');
+            
+            // Clear the form
+            this.reset();
+            
+            // Log for development (remove in production)
+            console.log('Form data saved:', formData);
+        });
     }
 });
