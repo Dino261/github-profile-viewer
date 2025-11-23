@@ -9,7 +9,7 @@
  * 
  * @file script.js
  * @version 1.0
- * @author Your Name
+ * @author Tugrulhan YIGIT
  */
 
 // Wait for the DOM to fully load before executing scripts
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const usernameInput = document.getElementById('usernameInput');
     const profileSection = document.getElementById('profileSection');
 
-    // Check if search elements exist (prevents errors on contact.html)
+    // Check if search elements exist
     if (searchBtn && usernameInput) {
         /**
          * Event Listener - Search button click handler
