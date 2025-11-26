@@ -1,11 +1,10 @@
 # Github Profile Viewer
 
-Responsive web application that searches and displays GitHub user profiles using the GitHub API. features real time data, smooth animation, and ocal storage.
-
+A responsive web application that searches and displays GitHub user profiles using the GitHub API. Features real-time data, smooth animations, and local storage for contact form submissions.
 # Features
 
--Search GitHub Users: Look up public GitHub username.
--Profie Information: View avatar, name, bio, and statistics.
+-Search GitHub Users: Look up any public GitHub username.
+-Profie Information: View avatar, name, bio, repository count, followers, and following statistics.
 -Real-Time Data: Fetches live data from Github API.
 -Responsive Design: Works perfectly on desktop, tablet, and mobile
 -Smooth Animation: Smooth transitios using Anime.js
@@ -32,7 +31,7 @@ github-profile-viewer/
 # Quick Start
 
 1-  **Clone the repository**
-   ```bash
+
    git clone https://github.com/YOUR_USERNAME/github-profile-viewer.git
    cd github-profile-viewer
 
@@ -43,6 +42,7 @@ github-profile-viewer/
 3- Start Searching
 -Enter any GitHub username
 -View profile information and statistics.
+-Use the contact form to send messages(saved to browser storage)
 
 API Usage
 
